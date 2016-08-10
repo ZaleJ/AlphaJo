@@ -7,29 +7,29 @@
 #include <stdio.h>
 #include <stdlib.h>
 //////////////////////////////////////////////
-//                 ¾ÖÃæ±íÊ¾                 //
+//                 å±€é¢è¡¨ç¤º                 //
 //////////////////////////////////////////////
 
-#define  NOPIECE     0 //ÎŞ×Ó
-#define  KING        1 //Íõ
-#define  ARCHER      2 //¹­¼ıÊÖ
-#define  KNIGHT      3 //ÆïÊ¿
-#define  FIGHTER     4 //²½±ø
-#define  WHITE       0 //°×·½
-#define  BLACK       1 //ºÚ·½
+#define  NOPIECE     0 //æ— å­
+#define  KING        1 //ç‹
+#define  ARCHER      2 //å¼“ç®­æ‰‹
+#define  KNIGHT      3 //éª‘å£«
+#define  FIGHTER     4 //æ­¥å…µ
+#define  WHITE       0 //ç™½æ–¹
+#define  BLACK       1 //é»‘æ–¹
 
-#define MAX_GEN_MOVES    32 //×ß·¨µÄ×î´óÉú³ÉÊı
-#define SEARCH_DEPTH      7 //ÉèÖÃËÑË÷Éî¶È
-#define RANDOM_VALUE     10 //Ëæ»úÒò×Ó
-#define INFINITY_VALUE  1000 //ÉèÖÃ¾ÖÃæ¼ÛÖµÎŞÇî´óÎª1000
+#define MAX_GEN_MOVES    32 //èµ°æ³•çš„æœ€å¤§ç”Ÿæˆæ•°
+#define SEARCH_DEPTH      7 //è®¾ç½®æœç´¢æ·±åº¦
+#define RANDOM_VALUE     10 //éšæœºå› å­
+#define INFINITY_VALUE  1000 //è®¾ç½®å±€é¢ä»·å€¼æ— ç©·å¤§ä¸º1000
 
-//È«¾Ö±äÁ¿
-int currentPlayer = WHITE;   //³õÊ¼»¯Îª°×·½×ßÆå£¬BLACK±íÊ¾ºÚ·½×ßÆå
-int theMoves[MAX_GEN_MOVES]; //¶¨ÒåÒ»¸ö×ß·¨Êı×éÓÃÀ´±£´æÉú³ÉµÄËùÓĞ×ß·¨
-int bestMove;                //×î¼Ñ×ß·¨£¬ËÑË÷½á¹û
-int theDepth;                //µ±Ç°ËÑË÷Éî¶È
+//å…¨å±€å˜é‡
+int currentPlayer = WHITE;   //åˆå§‹åŒ–ä¸ºç™½æ–¹èµ°æ£‹ï¼ŒBLACKè¡¨ç¤ºé»‘æ–¹èµ°æ£‹
+int theMoves[MAX_GEN_MOVES]; //å®šä¹‰ä¸€ä¸ªèµ°æ³•æ•°ç»„ç”¨æ¥ä¿å­˜ç”Ÿæˆçš„æ‰€æœ‰èµ°æ³•
+int bestMove;                //æœ€ä½³èµ°æ³•ï¼Œæœç´¢ç»“æœ
+int theDepth;                //å½“å‰æœç´¢æ·±åº¦
 
-//ÆåÅÌÊı×é(´ø¿ª¾ÖÆå×ÓÎ»ÖÃ£¬ÏÂ°×ÉÏºÚ)
+//æ£‹ç›˜æ•°ç»„(å¸¦å¼€å±€æ£‹å­ä½ç½®ï¼Œä¸‹ç™½ä¸Šé»‘)
 char board[64] = {
   0,  0,  0,  0,  0,  0,  0,  0,
   0, 18, 17, 16, 17, 18,  0,  0,
@@ -41,7 +41,7 @@ char board[64] = {
   0,  0,  0,  0,  0,  0,  0,  0
 };
 
-//ÓÃÀ´±ê¼ÇÆå×ÓÊÇ·ñÔÚÆåÅÌÉÏµÄÊı×é
+//ç”¨æ¥æ ‡è®°æ£‹å­æ˜¯å¦åœ¨æ£‹ç›˜ä¸Šçš„æ•°ç»„
 static const int isInBoard[64] = {
   0, 0, 0, 0, 0, 0, 0, 0,
   0, 1, 1, 1, 1, 1, 0, 0,
@@ -53,10 +53,10 @@ static const int isInBoard[64] = {
   0, 0, 0, 0, 0, 0, 0, 0
 };
 
-//ÓÃÀ´±ê¼ÇÍõÊÇ·ñÔÚÎ´¹ıºÓºÍ²½±øÊÇ·ñºóÍËµÄÊı×é
+//ç”¨æ¥æ ‡è®°ç‹æ˜¯å¦åœ¨æœªè¿‡æ²³å’Œæ­¥å…µæ˜¯å¦åé€€çš„æ•°ç»„
 static const int isAtHome[2][64] = {
-  { //°×Íõ(²½±ø)
-    0, 0, 0, 0, 0, 0, 0, 8, //ÏÂ±êÎª7µÄÔªËØÓÃÀ´ÅĞ¶Ï²½±øÊÇ·ñºóÍË
+  { //ç™½ç‹(æ­¥å…µ)
+    0, 0, 0, 0, 0, 0, 0, 8, //ä¸‹æ ‡ä¸º7çš„å…ƒç´ ç”¨æ¥åˆ¤æ–­æ­¥å…µæ˜¯å¦åé€€
     0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0,
@@ -64,8 +64,8 @@ static const int isAtHome[2][64] = {
     0, 1, 1, 1, 1, 1, 0, 0,
     0, 1, 1, 1, 1, 1, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0
-  }, { //ºÚÍõ(²½±ø)
-    0, 0, 0, 0, 0, 0, 0,-8, //ÏÂ±êÎª7µÄÔªËØÓÃÀ´ÅĞ¶Ï²½±øÊÇ·ñºóÍË
+  }, { //é»‘ç‹(æ­¥å…µ)
+    0, 0, 0, 0, 0, 0, 0,-8, //ä¸‹æ ‡ä¸º7çš„å…ƒç´ ç”¨æ¥åˆ¤æ–­æ­¥å…µæ˜¯å¦åé€€
     0, 1, 1, 1, 1, 1, 0, 0,
     0, 1, 1, 1, 1, 1, 0, 0,
     0, 1, 1, 1, 1, 1, 0, 0,
@@ -76,102 +76,102 @@ static const int isAtHome[2][64] = {
   }
 };
 
-//Õâ¼¸¸öÊı×éÓÃÀ´±íÊ¾Æå×ÓµÄ×ß×Ó·½Ïò
-static const char kingMovesTable[8] = {-8, 8, -1, 1, -9, -7, 9, 7}; //Íõ
-static const char archerMovesTable[4] = {-9, -7, 9, 7}; //¹­ÊÖ
-static const char knightMovesTable[4] = {-8, 8, -1, 1}; //ÆïÊ¿
-static const char fightMovesTable[4] = {-8, 8, -1, 1}; //²½±ø
+//è¿™å‡ ä¸ªæ•°ç»„ç”¨æ¥è¡¨ç¤ºæ£‹å­çš„èµ°å­æ–¹å‘
+static const char kingMovesTable[8] = {-8, 8, -1, 1, -9, -7, 9, 7}; //ç‹
+static const char archerMovesTable[4] = {-9, -7, 9, 7}; //å¼“æ‰‹
+static const char knightMovesTable[4] = {-8, 8, -1, 1}; //éª‘å£«
+static const char fightMovesTable[4] = {-8, 8, -1, 1}; //æ­¥å…µ
 
-//Æå×ÓµÄ¼ÛÖµÊı×é
-static const char pieceValue[4] = {9, 5, 5, 3}; //Íõ9 ¹­5 Æï5 ²½3
+//æ£‹å­çš„ä»·å€¼æ•°ç»„
+static const char pieceValue[4] = {9, 5, 5, 3}; //ç‹9 å¼“5 éª‘5 æ­¥3
 
-//ÓÉÆåÅÌÊı×éÏÂ±ê»ñµÃÆå×ÓX×ø±ê
+//ç”±æ£‹ç›˜æ•°ç»„ä¸‹æ ‡è·å¾—æ£‹å­Xåæ ‡
 int getXFromLocation(int location){
   return (location & 7) - 1;
 }
 
-//ÓÉÆåÅÌÊı×éÏÂ±ê»ñµÃÆå×ÓY×ø±ê
+//ç”±æ£‹ç›˜æ•°ç»„ä¸‹æ ‡è·å¾—æ£‹å­Yåæ ‡
 int getYFromLocation(int location){
   return (location >> 3) - 1;
 }
 
-//ÓÉÆå×ÓX×ø±ê£¬Y×ø±ê»ñµÃÆåÅÌÊı×éÏÂ±ê
+//ç”±æ£‹å­Xåæ ‡ï¼ŒYåæ ‡è·å¾—æ£‹ç›˜æ•°ç»„ä¸‹æ ‡
 int getLocationFromXY(int x, int y){
   return (x + 1) + (y + 1 << 3);
 }
 
-//ÅĞ¶ÏÊÇ·ñÎª¼º·½Æå×Ó
+//åˆ¤æ–­æ˜¯å¦ä¸ºå·±æ–¹æ£‹å­
 int isMyPiece(char piece){
   int tag;
   tag = (currentPlayer << 3) + 8;
   return piece & tag;
 }
 
-//¸Ä±ä×ßÆå·½£¬²»ÊÇ0 ¾ÍÊÇ1
+//æ”¹å˜èµ°æ£‹æ–¹ï¼Œä¸æ˜¯0 å°±æ˜¯1
 void changePlayer(){
   currentPlayer = 1 - currentPlayer;
 }
 
 //////////////////////////////////////////////
-//                 ×ß·¨Éú³É                 //
+//                 èµ°æ³•ç”Ÿæˆ                 //
 //////////////////////////////////////////////
 
-//ÔÚÆåÅÌÉÏ·ÅÒ»Ã¶Æå×ÓµÄº¯Êı
+//åœ¨æ£‹ç›˜ä¸Šæ”¾ä¸€æšæ£‹å­çš„å‡½æ•°
 void addPiece(int location, char piece){
   board[location] = piece;
 }
 
-//ÔÚÆåÅÌÉÏÄÃ×ßÒ»Ã¶Æå×ÓµÄº¯Êı
+//åœ¨æ£‹ç›˜ä¸Šæ‹¿èµ°ä¸€æšæ£‹å­çš„å‡½æ•°
 void delPiece(int location){
   board[location] = NOPIECE;
 }
 
-//¸ù¾İ×ß·¨Éú³É×ß·¨ÆğµãÎ»ÖÃ(ÆğµãÎ»ÖÃµÄÆåÅÌÊı×éÏÂ±ê)
+//æ ¹æ®èµ°æ³•ç”Ÿæˆèµ°æ³•èµ·ç‚¹ä½ç½®(èµ·ç‚¹ä½ç½®çš„æ£‹ç›˜æ•°ç»„ä¸‹æ ‡)
 int generateMoveFrom(int move){
   return move & 255;
 }
 
-//¸ù¾İ×ß·¨Éú³É×ß·¨Ä¿µÄÎ»ÖÃ(Ä¿µÄÎ»ÖÃµÄÆåÅÌÊı×éÏÂ±ê)
+//æ ¹æ®èµ°æ³•ç”Ÿæˆèµ°æ³•ç›®çš„ä½ç½®(ç›®çš„ä½ç½®çš„æ£‹ç›˜æ•°ç»„ä¸‹æ ‡)
 int generateMoveTo(int move){
   return move >> 8;
 }
 
-//ÓÉÆğµãÎ»ÖÃºÍÄ¿µÄÎ»ÖÃºÏ³É×ß·¨
+//ç”±èµ·ç‚¹ä½ç½®å’Œç›®çš„ä½ç½®åˆæˆèµ°æ³•
 int composeMove(int locationFrom, int locationTo){
   return locationFrom + locationTo * 256;
 }
 
-//×ß·¨Éú³Éº¯Êı£¬²úÉúÒ»¸ö¾ÖÃæµÄËùÓĞ×ß·¨£¬´«µİÒ»¸ö×ß·¨ÁĞ±íÊı×éÖ¸Õë£¬·µ»ØÉú³ÉµÄËùÓĞ×ß·¨
+//èµ°æ³•ç”Ÿæˆå‡½æ•°ï¼Œäº§ç”Ÿä¸€ä¸ªå±€é¢çš„æ‰€æœ‰èµ°æ³•ï¼Œä¼ é€’ä¸€ä¸ªèµ°æ³•åˆ—è¡¨æ•°ç»„æŒ‡é’ˆï¼Œè¿”å›ç”Ÿæˆçš„æ‰€æœ‰èµ°æ³•
 int generateAllMoves(int *moves){
   int i, genCount, locationFrom, locationTo, sideTag;
   char pieceFrom, pieceTo;
 
-  //×ß·¨¼ÆÊıÆ÷ÇåÁã
+  //èµ°æ³•è®¡æ•°å™¨æ¸…é›¶
   genCount = 0;
-  //×ßÆå·½±ê¼Ç
+  //èµ°æ£‹æ–¹æ ‡è®°
   sideTag = (currentPlayer << 3) + 8;
 
-  //±éÀúÆåÅÌÕÒµ½µ±Ç°×ßÆå·½Æå×Ó
+  //éå†æ£‹ç›˜æ‰¾åˆ°å½“å‰èµ°æ£‹æ–¹æ£‹å­
   for(locationFrom = 0; locationFrom < 64; locationFrom ++){
-    //È¡µÃµ±Ç°Î»ÖÃµÄÆå×Ó
+    //å–å¾—å½“å‰ä½ç½®çš„æ£‹å­
     pieceFrom = board[locationFrom];
 
-    //1.Èç¹ûÕÒµ½µÄ²»ÊÇ±¾·½Æå×Ó£¬¼ÌĞøÕÒ
+    //1.å¦‚æœæ‰¾åˆ°çš„ä¸æ˜¯æœ¬æ–¹æ£‹å­ï¼Œç»§ç»­æ‰¾
     if(!isMyPiece(pieceFrom)){
       continue;
     }
 
-    //2.ÕÒµ½Æå×Ó£¬¸ù¾İÆå×ÓÀàĞÍÉú³É×ß·¨
+    //2.æ‰¾åˆ°æ£‹å­ï¼Œæ ¹æ®æ£‹å­ç±»å‹ç”Ÿæˆèµ°æ³•
     switch (pieceFrom - sideTag + 1){
 
       case KING:
         for(i = 0; i < 8; i++){
           locationTo = locationFrom + kingMovesTable[i];
-          if(isAtHome[currentPlayer][locationTo]){ //Ä¿±êÎ»ÖÃÊÇ·ñÎ´³ö¹ú½ç
+          if(isAtHome[currentPlayer][locationTo]){ //ç›®æ ‡ä½ç½®æ˜¯å¦æœªå‡ºå›½ç•Œ
             pieceTo = board[locationTo];
-            if(!isMyPiece(pieceTo)){ //Ä¿±êÎ»ÖÃÊÇ·ñÎŞ±¾·½Æå×Ó
-              moves[genCount] = composeMove(locationFrom, locationTo); //±£´æ×ß·¨
-              genCount++; //¼ÆÊı
+            if(!isMyPiece(pieceTo)){ //ç›®æ ‡ä½ç½®æ˜¯å¦æ— æœ¬æ–¹æ£‹å­
+              moves[genCount] = composeMove(locationFrom, locationTo); //ä¿å­˜èµ°æ³•
+              genCount++; //è®¡æ•°
             }
           }
         }
@@ -180,11 +180,11 @@ int generateAllMoves(int *moves){
       case ARCHER:
         for(i = 0; i < 4; i++){
           locationTo = locationFrom + archerMovesTable[i];
-          if(isInBoard[locationTo]){ //Ä¿±êÎ»ÖÃÊÇ·ñÔÚÆåÅÌÄÚ
+          if(isInBoard[locationTo]){ //ç›®æ ‡ä½ç½®æ˜¯å¦åœ¨æ£‹ç›˜å†…
             pieceTo = board[locationTo];
-            if(!isMyPiece(pieceTo)){ //Ä¿±êÎ»ÖÃÊÇ·ñÎŞ±¾·½Æå×Ó
-              moves[genCount] = composeMove(locationFrom, locationTo); //±£´æ×ß·¨
-              genCount++; //¼ÆÊı
+            if(!isMyPiece(pieceTo)){ //ç›®æ ‡ä½ç½®æ˜¯å¦æ— æœ¬æ–¹æ£‹å­
+              moves[genCount] = composeMove(locationFrom, locationTo); //ä¿å­˜èµ°æ³•
+              genCount++; //è®¡æ•°
             }
           }
         }
@@ -193,11 +193,11 @@ int generateAllMoves(int *moves){
       case KNIGHT:
         for(i = 0; i < 4; i++){
           locationTo = locationFrom + knightMovesTable[i];
-          if(isInBoard[locationTo]){ //Ä¿±êÎ»ÖÃÊÇ·ñÔÚÆåÅÌÄÚ
+          if(isInBoard[locationTo]){ //ç›®æ ‡ä½ç½®æ˜¯å¦åœ¨æ£‹ç›˜å†…
             pieceTo = board[locationTo];
-            if(!isMyPiece(pieceTo)){ //Ä¿±êÎ»ÖÃÊÇ·ñÎŞ±¾·½Æå×Ó
-              moves[genCount] = composeMove(locationFrom, locationTo); //±£´æ×ß·¨
-              genCount++; //¼ÆÊı
+            if(!isMyPiece(pieceTo)){ //ç›®æ ‡ä½ç½®æ˜¯å¦æ— æœ¬æ–¹æ£‹å­
+              moves[genCount] = composeMove(locationFrom, locationTo); //ä¿å­˜èµ°æ³•
+              genCount++; //è®¡æ•°
             }
           }
         }
@@ -206,12 +206,12 @@ int generateAllMoves(int *moves){
       case FIGHTER:
         for(i = 0; i < 4; i++){
           locationTo = locationFrom + kingMovesTable[i];
-          if(isInBoard[locationTo]){ //Ä¿±êÎ»ÖÃÊÇ·ñÔÚÆåÅÌÄÚ
-            if(locationFrom + isAtHome[currentPlayer][7] != locationTo){ //¼ì²é±øÊÇ·ñºóÍË
+          if(isInBoard[locationTo]){ //ç›®æ ‡ä½ç½®æ˜¯å¦åœ¨æ£‹ç›˜å†…
+            if(locationFrom + isAtHome[currentPlayer][7] != locationTo){ //æ£€æŸ¥å…µæ˜¯å¦åé€€
               pieceTo = board[locationTo];
-              if(!isMyPiece(pieceTo)){ //Ä¿±êÎ»ÖÃÊÇ·ñÎŞ±¾·½Æå×Ó
-                moves[genCount] = composeMove(locationFrom, locationTo); //±£´æ×ß·¨
-                genCount++; //¼ÆÊı
+              if(!isMyPiece(pieceTo)){ //ç›®æ ‡ä½ç½®æ˜¯å¦æ— æœ¬æ–¹æ£‹å­
+                moves[genCount] = composeMove(locationFrom, locationTo); //ä¿å­˜èµ°æ³•
+                genCount++; //è®¡æ•°
               }
             }
           }
@@ -219,93 +219,93 @@ int generateAllMoves(int *moves){
         break;
     }
   }
-  return genCount; //·µ»ØÉú³ÉµÄ×ß·¨Êı
+  return genCount; //è¿”å›ç”Ÿæˆçš„èµ°æ³•æ•°
 }
 
-//ÄÜ¸ù¾İ×ß·¨×ßÒ»²½ÆåµÄº¯Êı
-int makeOneMove(int move, char *captured){ //´«µİÒ»¸öÓÃÀ´±£´æ³Ô×ÓÎ»ÖÃµÄÊı×é
+//èƒ½æ ¹æ®èµ°æ³•èµ°ä¸€æ­¥æ£‹çš„å‡½æ•°
+int makeOneMove(int move, char *captured){ //ä¼ é€’ä¸€ä¸ªç”¨æ¥ä¿å­˜åƒå­ä½ç½®çš„æ•°ç»„
   int i, genCount, isLegalMove, locationFrom, locationTo;
   char pieceFrom;
 
-  isLegalMove = 1; //³õÊ¼»¯×ß·¨Îª²»ºÏ·¨
-  genCount = generateAllMoves(theMoves); //Éú³ÉËùÓĞ×ß·¨
-  //ÔÚËùÓĞ×ß·¨ÖĞ²éÕÒµ±Ç°×ß·¨ÊÇ·ñ´æÔÚ
+  isLegalMove = 1; //åˆå§‹åŒ–èµ°æ³•ä¸ºä¸åˆæ³•
+  genCount = generateAllMoves(theMoves); //ç”Ÿæˆæ‰€æœ‰èµ°æ³•
+  //åœ¨æ‰€æœ‰èµ°æ³•ä¸­æŸ¥æ‰¾å½“å‰èµ°æ³•æ˜¯å¦å­˜åœ¨
   for(i = 0; i < genCount; i++){
-    //Èç¹ûÕÒµ½Ò»¸ö×ß·¨µÈÓÚµ±Ç°×ß·¨
+    //å¦‚æœæ‰¾åˆ°ä¸€ä¸ªèµ°æ³•ç­‰äºå½“å‰èµ°æ³•
     if(theMoves[i] == move){
-      isLegalMove = 0; //ËùÓĞ×ß·¨ÖĞÓĞ´Ë×ß·¨£¬ËµÃ÷×ß·¨ºÏ·¨
+      isLegalMove = 0; //æ‰€æœ‰èµ°æ³•ä¸­æœ‰æ­¤èµ°æ³•ï¼Œè¯´æ˜èµ°æ³•åˆæ³•
       break;
     }
   }
 
-  //1.Ê×ÏÈÅĞ¶Ï×ß·¨ÊÇ·ñºÏ·¨
+  //1.é¦–å…ˆåˆ¤æ–­èµ°æ³•æ˜¯å¦åˆæ³•
   if(isLegalMove == 1){
-    return 0; //·µ»Ø×ßÆåÊ§°Ü
+    return 0; //è¿”å›èµ°æ£‹å¤±è´¥
   }
 
-  //2.·Ö½â×ß·¨£¬È¡µÃÆğµãÎ»ÖÃºÍÄ¿µÄÎ»ÖÃ
+  //2.åˆ†è§£èµ°æ³•ï¼Œå–å¾—èµ·ç‚¹ä½ç½®å’Œç›®çš„ä½ç½®
   locationFrom = generateMoveFrom(move);
   locationTo = generateMoveTo(move);
 
-  //3.È¡µÃÒª×ßµÄ×Ó
+  //3.å–å¾—è¦èµ°çš„å­
   pieceFrom = board[locationFrom];
 
-  //4.±£´æ±»³ÔµÄ×Ó
+  //4.ä¿å­˜è¢«åƒçš„å­
   *captured = board[locationTo];
 
-  //5.ÒÆ¶¯Æå×Ó
+  //5.ç§»åŠ¨æ£‹å­
   if(*captured != NOPIECE){
     delPiece(locationTo);
   }
   delPiece(locationFrom);
   addPiece(locationTo, pieceFrom);
 
-  //6.½»»»×ßÆå·½
+  //6.äº¤æ¢èµ°æ£‹æ–¹
   changePlayer();
 
-  return 1; //·µ»Ø×ßÆå³É¹¦
+  return 1; //è¿”å›èµ°æ£‹æˆåŠŸ
 }
 
-//³·Ïú×ßÒ»²½ÆåµÄº¯Êı
+//æ’¤é”€èµ°ä¸€æ­¥æ£‹çš„å‡½æ•°
 void undoOneMove(int move, char captured){
   int locationFrom, locationTo;
   char pieceFrom;
 
-  //1.·Ö½â×ß·¨£¬È¡µÃÆğµãÎ»ÖÃºÍÄ¿µÄÎ»ÖÃ
+  //1.åˆ†è§£èµ°æ³•ï¼Œå–å¾—èµ·ç‚¹ä½ç½®å’Œç›®çš„ä½ç½®
   locationFrom = generateMoveFrom(move);
   locationTo = generateMoveTo(move);
 
-  //3.È¡µÃÒª»¹Ô­µÄ×Ó
+  //3.å–å¾—è¦è¿˜åŸçš„å­
   pieceFrom = board[locationTo];
 
-  //4.½»»»×ßÆå·½
+  //4.äº¤æ¢èµ°æ£‹æ–¹
   changePlayer();
 
-  //5.ÒÆ¶¯Æå×Ó
-  delPiece(locationTo);   //É¾³ıÆå×Ó
-  addPiece(locationFrom, pieceFrom); //Ìí¼Ó¼º·½Æå×Ó
+  //5.ç§»åŠ¨æ£‹å­
+  delPiece(locationTo);   //åˆ é™¤æ£‹å­
+  addPiece(locationFrom, pieceFrom); //æ·»åŠ å·±æ–¹æ£‹å­
   if(captured != NOPIECE){
     addPiece(locationTo, captured);
   }
 }
 
 //////////////////////////////////////////////
-//                 ¾ÖÃæÆÀ¹À                 //
+//                 å±€é¢è¯„ä¼°                 //
 //////////////////////////////////////////////
 
-//ÅĞ¶ÏÖ¸¶¨×ßÆå·½ÊÇ·ñ·Ö³öÊ¤¸ºµÄº¯Êı
+//åˆ¤æ–­æŒ‡å®šèµ°æ£‹æ–¹æ˜¯å¦åˆ†å‡ºèƒœè´Ÿçš„å‡½æ•°
 int isThePlayerDie(int thePlayer){
   int i, theKing, isDie;
 
-  //³õÊ¼»¯±ê¼Ç
+  //åˆå§‹åŒ–æ ‡è®°
   isDie = 1;
 
-  //È¡µÃµ±Ç°×ßÆå·½µÄÍõ
+  //å–å¾—å½“å‰èµ°æ£‹æ–¹çš„ç‹
   theKing = (thePlayer << 3) + 8;
 
-  //Èç¹ûÉú³ÉÁã¸ö×ß·¨£¬ÔòÒÑ±»À§ËÀ£¬½«·µ»Ø1
+  //å¦‚æœç”Ÿæˆé›¶ä¸ªèµ°æ³•ï¼Œåˆ™å·²è¢«å›°æ­»ï¼Œå°†è¿”å›1
   if(generateAllMoves(theMoves)){
-    //¼ì²âÍõÊÇ·ñËÀÈ¥
+    //æ£€æµ‹ç‹æ˜¯å¦æ­»å»
     for(i = 0; i < 64; i ++){
       if(board[i] == theKing){
         isDie = 0;
@@ -316,20 +316,20 @@ int isThePlayerDie(int thePlayer){
   return isDie;
 }
 
-//¾ÖÃæÆÀ¹Àº¯Êı
+//å±€é¢è¯„ä¼°å‡½æ•°
 int evaluatePosition(){
 
   int i, whiteValue, blackValue, value;
 
-  //×Ô¼ºÒÑËÀ
+  //è‡ªå·±å·²æ­»
   if(isThePlayerDie(currentPlayer)){
     return -INFINITY_VALUE + theDepth;
   }
 
-  //³õÊ¼»¯Ë«·½µÄ×Ü¼ÛÖµ
+  //åˆå§‹åŒ–åŒæ–¹çš„æ€»ä»·å€¼
   whiteValue = blackValue = 0;
 
-  //±éÀúÆåÅÌ£¬ÕÒµ½Æå×Ó
+  //éå†æ£‹ç›˜ï¼Œæ‰¾åˆ°æ£‹å­
   for(i = 0; i < 64; i++){
     if(board[i] <= 15 && board[i] >= 1){
       whiteValue += pieceValue[board[i] % 8];
@@ -339,39 +339,39 @@ int evaluatePosition(){
     }
   }
 
-  //¼ÆËã¾ÖÃæ¼ÛÖµ
+  //è®¡ç®—å±€é¢ä»·å€¼
   value = whiteValue - blackValue;
 
   return currentPlayer == WHITE ? value : -value;
 }
 
 //////////////////////////////////////////////
-//                 ¾ÖÃæËÑË÷                 //
+//                 å±€é¢æœç´¢                 //
 //////////////////////////////////////////////
 
-//Alpha-BetaËÑË÷º¯Êı
+//Alpha-Betaæœç´¢å‡½æ•°
 int AlphaBetaSearch(int depth, int alpha, int beta){
   int i, genCount, value;
   int allMoves[MAX_GEN_MOVES];
   char captured;
 
-  //Èç¹ûËÑË÷µ½Ö¸¶¨Éî¶È£¬Ôò·µ»Ø¾ÖÃæÆÀ¹ÀÖµ
+  //å¦‚æœæœç´¢åˆ°æŒ‡å®šæ·±åº¦ï¼Œåˆ™è¿”å›å±€é¢è¯„ä¼°å€¼
   if(depth == 0){
     return evaluatePosition();
   }
 
-  //Èç¹ûÊÇÉ±Æå£¬¾Í¸ù¾İ¾àÉ±ÆåµÄ²½Êı¸ø³öÆÀ¼Û
-  if(isThePlayerDie(currentPlayer)){ //×Ô¼ºÒÑËÀ
+  //å¦‚æœæ˜¯æ€æ£‹ï¼Œå°±æ ¹æ®è·æ€æ£‹çš„æ­¥æ•°ç»™å‡ºè¯„ä»·
+  if(isThePlayerDie(currentPlayer)){ //è‡ªå·±å·²æ­»
     return -INFINITY_VALUE + theDepth;
   }
 
   genCount = generateAllMoves(allMoves);
 
   for(i = 0; i < genCount; i++){
-    if(makeOneMove(allMoves[i], &captured)){ //Èç¹û×ßÆå³É¹¦
+    if(makeOneMove(allMoves[i], &captured)){ //å¦‚æœèµ°æ£‹æˆåŠŸ
       theDepth++;
-      value = -AlphaBetaSearch(depth - 1, -beta, -alpha); //µİ¹é
-      undoOneMove(allMoves[i], captured); //»¹Ô­
+      value = -AlphaBetaSearch(depth - 1, -beta, -alpha); //é€’å½’
+      undoOneMove(allMoves[i], captured); //è¿˜åŸ
       theDepth--;
 
       if(value >= beta){
@@ -379,9 +379,9 @@ int AlphaBetaSearch(int depth, int alpha, int beta){
       }
       if(value > alpha){
         alpha = value;
-        if(theDepth == 0){ //Èç¹ûÊÇ¸ù½Úµã±£´æ×î¼Ñ×ß·¨
+        if(theDepth == 0){ //å¦‚æœæ˜¯æ ¹èŠ‚ç‚¹ä¿å­˜æœ€ä½³èµ°æ³•
           bestMove = allMoves[i];
-          alpha += (rand() & RANDOM_VALUE) - (rand() & RANDOM_VALUE); //Ëæ»úĞÔ
+          alpha += (rand() & RANDOM_VALUE) - (rand() & RANDOM_VALUE); //éšæœºæ€§
         }
       }
     }
@@ -390,28 +390,28 @@ int AlphaBetaSearch(int depth, int alpha, int beta){
   return alpha;
 }
 
-//ÈÃµçÄÔ×ßÆå
+//è®©ç”µè„‘èµ°æ£‹
 void computerThink(){
   char captured;
-  theDepth = 0; //¾à¸ù½áµãµÄ¾àÀë
+  theDepth = 0; //è·æ ¹ç»“ç‚¹çš„è·ç¦»
   AlphaBetaSearch(SEARCH_DEPTH, -INFINITY_VALUE, INFINITY_VALUE);
   makeOneMove(bestMove, &captured);
 }
 
 //////////////////////////////////////////////
-//                 ½çÃæ³ÌĞò                 //
+//                 ç•Œé¢ç¨‹åº                 //
 //////////////////////////////////////////////
 
-//¶¨Òå¸ö±äÁ¿ÓÃÀ´ÉèÖÃµçÄÔ(ÒıÇæ)ÊÇ°×·½»òÕßÊÇºÚ·½
+//å®šä¹‰ä¸ªå˜é‡ç”¨æ¥è®¾ç½®ç”µè„‘(å¼•æ“)æ˜¯ç™½æ–¹æˆ–è€…æ˜¯é»‘æ–¹
 int engine = BLACK;
 
-//Ğ´¸ö·­×ªÆåÅÌµÄº¯Êı
+//å†™ä¸ªç¿»è½¬æ£‹ç›˜çš„å‡½æ•°
 int flipLocation(int location){
   location = 62 - location;
   return location;
 }
 
-//Ğ´¸ö¼òµ¥µÄ½çÃæ°É
+//å†™ä¸ªç®€å•çš„ç•Œé¢å§
 void showBoard(){
   int i, j, piece;
   int location;
@@ -421,30 +421,30 @@ void showBoard(){
   for(i = 0; i < 6; i++){
     printf("                    %d ", i);
     for(j = 0; j < 5; j++){
-   	  location = getLocationFromXY(j, i); //È¡µÃÊı×éÏÂ±ê
+   	  location = getLocationFromXY(j, i); //å–å¾—æ•°ç»„ä¸‹æ ‡
 
-      if(engine == WHITE){ //Èç¹ûÒıÇæ³Ö°×·½£¬·­×ªÆåÅÌÎ»ÖÃ
+      if(engine == WHITE){ //å¦‚æœå¼•æ“æŒç™½æ–¹ï¼Œç¿»è½¬æ£‹ç›˜ä½ç½®
         location = flipLocation(location);
       }
       piece = board[location];
       if(piece == 8){
-        printf("¡ï");
+        printf("â˜…");
       }else if(piece == 9){
-        printf("¡ô");
+        printf("â—†");
       }else if(piece == 10){
-        printf("¡ö");
+        printf("â– ");
       }else if(piece == 11){
-        printf("¡ñ");
+        printf("â—");
       }else if(piece == 16){
-        printf("¡î");
+        printf("â˜†");
       }else if(piece == 17){
-        printf("¡ó");
+        printf("â—‡");
       }else if(piece == 18){
-        printf("¡õ");
+        printf("â–¡");
       }else if(piece == 19){
-        printf("¡ğ");
+        printf("â—‹");
       }else if(piece == NOPIECE){
-        printf("©ï");
+        printf("â•‹");
       }else{
         printf(" ");
       }
@@ -456,190 +456,189 @@ void showBoard(){
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-//                              ÏÂÃæÊÇÑİÊ¾³ÌĞò                                //
+//                              ä¸‹é¢æ˜¯æ¼”ç¤ºç¨‹åº                                //
 ////////////////////////////////////////////////////////////////////////////////
 
 int main(void){
   int move, from, to, fromX, fromY, toX, toY;
   char command, captured;
 
-  //ÉèÖÃËæ»úÊıÖÖ×Ó
+  //è®¾ç½®éšæœºæ•°ç§å­
   srand((long)time(NULL));
 
-  /* *********²âÊÔÓÃ´úÂë*********
+  /* *********æµ‹è¯•ç”¨ä»£ç *********
   int i, genCount, value, eatCount;
 
-  genCount = generateAllMoves(theMoves); //Éú³É¿ª¾ÖËùÓĞ×ß·¨
+  genCount = generateAllMoves(theMoves); //ç”Ÿæˆå¼€å±€æ‰€æœ‰èµ°æ³•
 
-  printf("¿ª¾ÖÊ±£¬°×·½ÓĞ%dÖÖ×ß·¨£¬·Ö±ğÊÇ£º\n", genCount);
+  printf("å¼€å±€æ—¶ï¼Œç™½æ–¹æœ‰%dç§èµ°æ³•ï¼Œåˆ†åˆ«æ˜¯ï¼š\n", genCount);
   for(i = 0; i < genCount;i++){
       printf("from %d to %d \n", generateMoveFrom(theMoves[i]), generateMoveTo(theMoves[i]));
   }
 
-  printf("¿ª¾ÖÊ±£¬¾ÖÃæµÄ¼ÛÖµÊÇ£º%d\n", evaluatePosition());
+  printf("å¼€å±€æ—¶ï¼Œå±€é¢çš„ä»·å€¼æ˜¯ï¼š%d\n", evaluatePosition());
 
   value = AlphaBetaSearch(6, -INFINITY_VALUE, INFINITY_VALUE);
 
-  printf("¿ª¾ÖËÑË÷¾ÖÃæ£¬ÕÒµ½µÄ×î¼Ñ¾ÖÃæÆÀ·Ö£º%d\n", value);
+  printf("å¼€å±€æœç´¢å±€é¢ï¼Œæ‰¾åˆ°çš„æœ€ä½³å±€é¢è¯„åˆ†ï¼š%d\n", value);
 
-  printf("¿ª¾ÖËÑË÷¾ÖÃæ£¬ÕÒµ½µÄ×î¼Ñ×ß·¨ÊÇ£ºfrom %d to %d \n", generateMoveFrom(bestMove), generateMoveTo(bestMove));
+  printf("å¼€å±€æœç´¢å±€é¢ï¼Œæ‰¾åˆ°çš„æœ€ä½³èµ°æ³•æ˜¯ï¼šfrom %d to %d \n", generateMoveFrom(bestMove), generateMoveTo(bestMove));
   */
 
   ///*
   printf("/////////////////////////////\n");
   printf("//    SmallChess1.0   //\n");
   printf("/////////////////////////////\n");
-  printf("\n¿ªÊ¼£º\n\n");
+  printf("\nå¼€å§‹ï¼š\n\n");
 
   showBoard();
 
   while(1){
-    printf("\nÊäÈëQÍË³ö£¬ÊäÈëDÏÂÆå£º");
+    printf("\nè¾“å…¥Qé€€å‡ºï¼Œè¾“å…¥Dä¸‹æ£‹ï¼š");
     command = getch();
     if(command == 'q' || command == 'Q'){
       return 0;
     }
-    if(command == 'd' || command == 'D'){ //Ñ¡ÔñÁËÏÂÆå
+    if(command == 'd' || command == 'D'){ //é€‰æ‹©äº†ä¸‹æ£‹
 
-      printf("\nÊäÈëWÑ¡Ôñ°×Æå£¬ÊäÈëBÑ¡ÔñºÚÆå£¬ÊäÈëC¹Û¿´µçÄÔ¶ÔŞÄ£º");
+      printf("\nè¾“å…¥Wé€‰æ‹©ç™½æ£‹ï¼Œè¾“å…¥Bé€‰æ‹©é»‘æ£‹ï¼Œè¾“å…¥Cè§‚çœ‹ç”µè„‘å¯¹å¼ˆï¼š");
       command = getch();
-      if(command == 'w' || command == 'W'){ //ÈËÑ¡ÔñÁË°×Æå
-        engine = BLACK; //ÉèÖÃÒıÇæÎªºÚÆå
-        printf("\nÄúÑ¡ÔñÁË°×Æå£¡\n");
-      }else if(command == 'b' || command == 'B'){ //ÈËÑ¡ÔñÁËºÚÆå
-        engine = WHITE; //ÉèÖÃÒıÇæÎª°×Æå
-        printf("\nÄúÑ¡ÔñÁËºÚÆå£¡\n");
-      }else if(command == 'c' || command == 'C'){ //ÈËÑ¡ÔñÁËºÚÆå
-        engine = 2; //ÉèÖÃµçÄÔ¶ÔŞÄ±êÖ¾
-        printf("\nµçÄÔ¶ÔŞÄ¿ªÊ¼£¡\n");
+      if(command == 'w' || command == 'W'){ //äººé€‰æ‹©äº†ç™½æ£‹
+        engine = BLACK; //è®¾ç½®å¼•æ“ä¸ºé»‘æ£‹
+        printf("\næ‚¨é€‰æ‹©äº†ç™½æ£‹ï¼\n");
+      }else if(command == 'b' || command == 'B'){ //äººé€‰æ‹©äº†é»‘æ£‹
+        engine = WHITE; //è®¾ç½®å¼•æ“ä¸ºç™½æ£‹
+        printf("\næ‚¨é€‰æ‹©äº†é»‘æ£‹ï¼\n");
+      }else if(command == 'c' || command == 'C'){ //äººé€‰æ‹©äº†é»‘æ£‹
+        engine = 2; //è®¾ç½®ç”µè„‘å¯¹å¼ˆæ ‡å¿—
+        printf("\nç”µè„‘å¯¹å¼ˆå¼€å§‹ï¼\n");
       }else{
         continue;
       }
       while(1){
         if(isThePlayerDie(currentPlayer) && currentPlayer != engine){
-          printf("\n²»ºÃÒâË¼£¬ÄãÒÑÕ½°Ü£¡ÔÙÀ´Ò»¾ÖÇëÖØĞÂ´ò¿ª³ÌĞò£¡\n");
-          printf("\nÊäÈëqÍË³ö£º");
+          printf("\nä¸å¥½æ„æ€ï¼Œä½ å·²æˆ˜è´¥ï¼å†æ¥ä¸€å±€è¯·é‡æ–°æ‰“å¼€ç¨‹åºï¼\n");
+          printf("\nè¾“å…¥qé€€å‡ºï¼š");
           command = getch();
           if(command == 'q' || command == 'Q'){
             return 0;
           }
         }else if(isThePlayerDie(currentPlayer) && currentPlayer == engine){
-          printf("\n¹§Ï²Äã£¬µçÄÔ±»Äã´ò°Ü£¡ÔÙÀ´Ò»¾ÖÇëÖØĞÂ´ò¿ª³ÌĞò£¡\n");
-          printf("\nÊäÈëqÍË³ö£º");
+          printf("\næ­å–œä½ ï¼Œç”µè„‘è¢«ä½ æ‰“è´¥ï¼å†æ¥ä¸€å±€è¯·é‡æ–°æ‰“å¼€ç¨‹åºï¼\n");
+          printf("\nè¾“å…¥qé€€å‡ºï¼š");
           command = getch();
           if(command == 'q' || command == 'Q'){
             return 1;
           }
         }else{
-          if(engine == WHITE){ //ÒıÇæÎª°×Æå
+          if(engine == WHITE){ //å¼•æ“ä¸ºç™½æ£‹
             showBoard();
-            if(1){ //Èç¹ûµçÄÔ³Ö°×·½ÔòÏÈ×ß
-              printf("\nµçÄÔÕıÔÚË¼¿¼...\n");
+            if(1){ //å¦‚æœç”µè„‘æŒç™½æ–¹åˆ™å…ˆèµ°
+              printf("\nç”µè„‘æ­£åœ¨æ€è€ƒ...\n");
               computerThink();
               move = bestMove;
-              from = generateMoveFrom(move); //·Ö½â×ß·¨
+              from = generateMoveFrom(move); //åˆ†è§£èµ°æ³•
               to = generateMoveTo(move);
-              from = flipLocation(from); //·­×ªÎ»ÖÃ
+              from = flipLocation(from); //ç¿»è½¬ä½ç½®
               to = flipLocation(to);
-              fromX = getXFromLocation(from); //È¡µÃ×ø±ê
+              fromX = getXFromLocation(from); //å–å¾—åæ ‡
 			  fromY = getYFromLocation(from);
 			  toX = getXFromLocation(to);
 			  toY = getYFromLocation(to);
-              printf("\nµçÄÔËù×ßµÄÆåÊÇ£ºfrom (%d,%d) to (%d,%d)\n", fromX, fromY, toX, toY);
+              printf("\nç”µè„‘æ‰€èµ°çš„æ£‹æ˜¯ï¼šfrom (%d,%d) to (%d,%d)\n", fromX, fromY, toX, toY);
               showBoard();
             }
-            if(isThePlayerDie(currentPlayer)){ //Èç¹ûÍæ¼ÒÒÑ°Ü
+            if(isThePlayerDie(currentPlayer)){ //å¦‚æœç©å®¶å·²è´¥
               continue;
             }
-            if(1){ //ÂÖµ½ÈË×ßÆå
-              printf("\nÂÖµ½ÄúÏÂÆå£¬ÇëÊäÈë×ø±ê x,y x,y £º");
+            if(1){ //è½®åˆ°äººèµ°æ£‹
+              printf("\nè½®åˆ°æ‚¨ä¸‹æ£‹ï¼Œè¯·è¾“å…¥åæ ‡ x,y x,y ï¼š");
               scanf("%d,%d %d,%d", &fromX, &fromY, &toX, &toY);
-              printf("\nÄú×ßµÄÆåÊÇ£ºfrom (%d,%d) to (%d,%d)\n", fromX, fromY, toX, toY);
-              from = getLocationFromXY(fromX, fromY); //ºÏ³ÉÎ»ÖÃ
+              printf("\næ‚¨èµ°çš„æ£‹æ˜¯ï¼šfrom (%d,%d) to (%d,%d)\n", fromX, fromY, toX, toY);
+              from = getLocationFromXY(fromX, fromY); //åˆæˆä½ç½®
               to = getLocationFromXY(toX, toY);
-              from = flipLocation(from); //·­×ªÎ»ÖÃ
+              from = flipLocation(from); //ç¿»è½¬ä½ç½®
               to = flipLocation(to);
-              move = composeMove(from, to); //ºÏ³É×ß·¨
+              move = composeMove(from, to); //åˆæˆèµ°æ³•
               while(!makeOneMove(move, &captured)){
-                printf("\nÊäÈë×ø±ê´íÎó£¬ÇëÖØĞÂÊäÈë×ø±ê£º");
+                printf("\nè¾“å…¥åæ ‡é”™è¯¯ï¼Œè¯·é‡æ–°è¾“å…¥åæ ‡ï¼š");
                 scanf("%d,%d %d,%d", &fromX, &fromY, &toX, &toY);
-                from = getLocationFromXY(fromX, fromY);//ºÏ³ÉÎ»ÖÃ
+                from = getLocationFromXY(fromX, fromY);//åˆæˆä½ç½®
                 to = getLocationFromXY(toX, toY);
-                from = flipLocation(from); //·­×ªÎ»ÖÃ
+                from = flipLocation(from); //ç¿»è½¬ä½ç½®
                 to = flipLocation(to);
-                move = composeMove(from, to); //ºÏ³É×ß·¨
+                move = composeMove(from, to); //åˆæˆèµ°æ³•
                 getchar();
               }
             }
           }
 
-          if(engine == BLACK){ //ÒıÇæÎªºÚ·½
+          if(engine == BLACK){ //å¼•æ“ä¸ºé»‘æ–¹
             showBoard();
-            if(1){ //ÂÖµ½ÈË×ßÆå
-              printf("\nÂÖµ½ÄúÏÂÆå£¬ÇëÊäÈë×ø±ê x,y x,y £º");
+            if(1){ //è½®åˆ°äººèµ°æ£‹
+              printf("\nè½®åˆ°æ‚¨ä¸‹æ£‹ï¼Œè¯·è¾“å…¥åæ ‡ x,y x,y ï¼š");
               scanf("%d,%d %d,%d", &fromX, &fromY, &toX, &toY);
-              printf("\nÄú×ßµÄÆåÊÇ£ºfrom (%d,%d) to (%d,%d)\n", fromX, fromY, toX, toY);
-              from = getLocationFromXY(fromX, fromY);//ºÏ³ÉÎ»ÖÃ
+              printf("\næ‚¨èµ°çš„æ£‹æ˜¯ï¼šfrom (%d,%d) to (%d,%d)\n", fromX, fromY, toX, toY);
+              from = getLocationFromXY(fromX, fromY);//åˆæˆä½ç½®
               to = getLocationFromXY(toX, toY);
-              move = composeMove(from, to); //ºÏ³É×ß·¨
+              move = composeMove(from, to); //åˆæˆèµ°æ³•
               while(!makeOneMove(move, &captured)){
-                printf("\nÊäÈë×ø±ê´íÎó£¬ÇëÖØĞÂÊäÈë×ø±ê£º");
+                printf("\nè¾“å…¥åæ ‡é”™è¯¯ï¼Œè¯·é‡æ–°è¾“å…¥åæ ‡ï¼š");
                 scanf("%d,%d %d,%d", &fromX, &fromY, &toX, &toY);
-                from = getLocationFromXY(fromX, fromY);//ºÏ³ÉÎ»ÖÃ
+                from = getLocationFromXY(fromX, fromY);//åˆæˆä½ç½®
                 to = getLocationFromXY(toX, toY);
-                move = composeMove(from, to); //ºÏ³É×ß·¨
+                move = composeMove(from, to); //åˆæˆèµ°æ³•
                 getchar();
               }
               showBoard();
             }
-            if(isThePlayerDie(currentPlayer)){ //Èç¹ûµçÄÔÒÑ°Ü
+            if(isThePlayerDie(currentPlayer)){ //å¦‚æœç”µè„‘å·²è´¥
               continue;
             }
-            if(1){ //Èç¹ûµçÄÔºÚ·½Ôòºó×ß
-              printf("\nµçÄÔÕıÔÚË¼¿¼...\n");
+            if(1){ //å¦‚æœç”µè„‘é»‘æ–¹åˆ™åèµ°
+              printf("\nç”µè„‘æ­£åœ¨æ€è€ƒ...\n");
               computerThink();
               move = bestMove;
-              from = generateMoveFrom(move); //·Ö½â×ß·¨
+              from = generateMoveFrom(move); //åˆ†è§£èµ°æ³•
               to = generateMoveTo(move);
-              fromX = getXFromLocation(from); //È¡µÃ×ø±ê
+              fromX = getXFromLocation(from); //å–å¾—åæ ‡
 			  fromY = getYFromLocation(from);
 			  toX = getXFromLocation(to);
 			  toY = getYFromLocation(to);
-              printf("\nµçÄÔËù×ßµÄÆåÊÇ£ºfrom (%d,%d) to (%d,%d)\n", fromX, fromY, toX, toY);
+              printf("\nç”µè„‘æ‰€èµ°çš„æ£‹æ˜¯ï¼šfrom (%d,%d) to (%d,%d)\n", fromX, fromY, toX, toY);
             }
           }
 
-          if(engine == 2){ //ÒıÇæ¶ÔÕ½±êÖ¾
+          if(engine == 2){ //å¼•æ“å¯¹æˆ˜æ ‡å¿—
             showBoard();
-            if(1){ //µçÄÔAÏÈ×ßÆå
-              printf("\nµçÄÔAÕıÔÚË¼¿¼...\n");
+            if(1){ //ç”µè„‘Aå…ˆèµ°æ£‹
+              printf("\nç”µè„‘Aæ­£åœ¨æ€è€ƒ...\n");
               //sleep(3000);
               computerThink();
               move = bestMove;
-              from = generateMoveFrom(move); //·Ö½â×ß·¨
+              from = generateMoveFrom(move); //åˆ†è§£èµ°æ³•
               to = generateMoveTo(move);
-              fromX = getXFromLocation(from); //È¡µÃ×ø±ê
+              fromX = getXFromLocation(from); //å–å¾—åæ ‡
 			  fromY = getYFromLocation(from);
 			  toX = getXFromLocation(to);
 			  toY = getYFromLocation(to);
-              printf("\nµçÄÔAËù×ßµÄÆåÊÇ£ºfrom (%d,%d) to (%d,%d)\n", fromX, fromY, toX, toY);
+              printf("\nç”µè„‘Aæ‰€èµ°çš„æ£‹æ˜¯ï¼šfrom (%d,%d) to (%d,%d)\n", fromX, fromY, toX, toY);
               showBoard();
             }
-            if(isThePlayerDie(currentPlayer)){ //Èç¹ûÍæ¼ÒÒÑ°Ü
+            if(isThePlayerDie(currentPlayer)){ //å¦‚æœç©å®¶å·²è´¥
               continue;
             }
-            if(1){ //ÂÖµ½µçÄÔB×ßÆå
-              printf("\nµçÄÔBÕıÔÚË¼¿¼...\n");
-              //sleep(3000);
+            if(1){ //è½®åˆ°ç”µè„‘Bèµ°æ£‹
+              printf("\nç”µè„‘Bæ­£åœ¨æ€è€ƒ...\n");
               computerThink();
               move = bestMove;
-              from = generateMoveFrom(move); //·Ö½â×ß·¨
+              from = generateMoveFrom(move); //åˆ†è§£èµ°æ³•
               to = generateMoveTo(move);
-              fromX = getXFromLocation(from); //È¡µÃ×ø±ê
+              fromX = getXFromLocation(from); //å–å¾—åæ ‡
 			  fromY = getYFromLocation(from);
 			  toX = getXFromLocation(to);
 			  toY = getYFromLocation(to);
-              printf("\nµçÄÔBËù×ßµÄÆåÊÇ£ºfrom (%d,%d) to (%d,%d)\n", fromX, fromY, toX, toY);
+              printf("\nç”µè„‘Bæ‰€èµ°çš„æ£‹æ˜¯ï¼šfrom (%d,%d) to (%d,%d)\n", fromX, fromY, toX, toY);
             }
           }
         }
